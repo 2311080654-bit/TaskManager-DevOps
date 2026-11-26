@@ -1,6 +1,14 @@
 import os
+import sys
 import tempfile
+from pathlib import Path
+
 import pytest
+
+# Asegurar que la raíz del repositorio esté en sys.path (necesario en GitHub Actions)
+ROOT_DIR = str(Path(__file__).resolve().parent.parent)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
 # Usar una base de datos temporal antes de importar app
 db_fd, db_path = tempfile.mkstemp(suffix=".db")
