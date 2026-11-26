@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskManager — DevOps</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 2rem 1rem; }
+    .container { max-width: 900px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    h1 { font-size: 1.75rem; }
+    .badge {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .full { grid-column: 1 / -1; }
+
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.35rem; }
+    input, textarea, select {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.95rem;
+    }
+    textarea { min-height: 70px; resize: vertical; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    button:hover { opacity: 0.92; }
+    .btn-primary { background: var(--accent); color: #082f49; }
+    .btn-secondary { background: #475569; color: var(--text); }
+    .btn-danger { background: var(--danger); color: white; }
+
+    .msg {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      min-height: 1.2rem;
+      color: var(--success);
+    }
+    .msg.error { color: #f87171; }
+
+    .task-list { display: grid; gap: 0.85rem; }
+    .task-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .task-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .task-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .task-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; }
+    .tag {
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
+
+    .task-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .empty { color: var(--muted); text-align: center; padding: 1.5rem 0; }
+
+    @media (max-width: 640px) {
+      form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>TaskManager</h1>
+        <p style="color: var(--muted); font-size: 0.9rem;">Gestión de tareas — Flask + SQLite + CI/CD</p>
+      </div>
+      <span class="badge">v1.0.0 · Live</span>
+    </header>
+
+    <section class="card">
+      <h2 id="form-title" style="font-size: 1.15rem; margin-bottom: 1rem;">Nueva tarea</h2>
+      <form id="task-form">
+        <input type="hidden" id="task-id" />
+
+        <div>
+          <label for="nombre">Nombre *</label>
+          <input type="text" id="nombre" name="nombre" placeholder="Ej. Configurar pipeline CD" required />
+        </div>
+
+        <div>
+          <label for="prioridad">Prioridad</label>
+          <select id="prioridad" name="prioridad">
+            <option value="Alta">Alta</option>
+            <option value="Media" selected>Media</option>
+            <option value="Baja">Baja</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="Pendiente" selected>Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Terminada">Terminada</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" name="descripcion" placeholder="Detalles de la tarea..."></textarea>
+        </div>
+
+        <div class="full" style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <button type="submit" class="btn-primary" id="submit-btn">Guardar tarea</button>
+          <button type="button" class="btn-secondary" id="cancel-btn" style="display: none;">Cancelar edición</button>
+        </div>
+      </form>
+      <div id="feedback" class="msg"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="font-size: 1.15rem; margin-bottom: 1rem;">Tareas registradas</h2>
+      <div id="task-list" class="task-list">
+        <p class="empty">Cargando tareas...</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_URL = "/api/tareas";
+    const form = document.getElementById("task-form");
+    const taskIdInput = document.getElementById("task-id");
+    const nombreInput = document.getElementById("nombre");
+    const descripcionInput = document.getElementById("descripcion");
+    const estadoInput = document.getElementById("estado");
+    const prioridadInput = document.getElementById("prioridad");
+    const formTitle = document.getElementById("form-title");
+    const submitBtn = document.getElementById("submit-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const feedback = document.getElementById("feedback");
+    const taskList = document.getElementById("task-list");
+
+    function setFeedback(text, isError = false) {
+      feedback.textContent = text;
+      feedback.className = isError ? "msg error" : "msg";
+    }
+
+    function resetForm() {
+      taskIdInput.value = "";
+      form.reset();
+      estadoInput.value = "Pendiente";
+      prioridadInput.value = "Media";
+      formTitle.textContent = "Nueva tarea";
+      submitBtn.textContent = "Guardar tarea";
+      cancelBtn.style.display = "none";
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function cargarTareas() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+
+        if (!res.ok) {
+          taskList.innerHTML = `<p class="empty">Error al cargar tareas.</p>`;
+          return;
+        }
+
+        if (!Array.isArray(data) || data.length === 0) {
+          taskList.innerHTML = `<p class="empty">No hay tareas registradas todavía.</p>`;
+          return;
+        }
+
+        taskList.innerHTML = data.map(t => `
+          <div class="task-item">
+            <div>
+              <div class="task-title">${escapeHtml(t.nombre)}</div>
+              <div class="task-desc">${escapeHtml(t.descripcion || "Sin descripción")}</div>
+              <div class="task-meta">
+                <span class="tag">Estado: <strong>${escapeHtml(t.estado)}</strong></span>
+                <span class="tag">Prioridad: <strong>${escapeHtml(t.prioridad)}</strong></span>
+              </div>
+            </div>
+            <div class="task-actions">
+              <button type="button" class="btn-secondary" onclick='editarTarea(${JSON.stringify(t)})'>Editar</button>
+              <button type="button" class="btn-danger" onclick="eliminarTarea(${t.id})">Eliminar</button>
+            </div>
+          </div>
+        `).join("");
+      } catch (err) {
+        taskList.innerHTML = `<p class="empty">No se pudo conectar con la API.</p>`;
+      }
+    }
+
+    window.editarTarea = function(tarea) {
+      taskIdInput.value = tarea.id;
+      nombreInput.value = tarea.nombre;
+      descripcionInput.value = tarea.descripcion || "";
+      estadoInput.value = tarea.estado;
+      prioridadInput.value = tarea.prioridad;
+      formTitle.textContent = `Editar tarea #${tarea.id}`;
+      submitBtn.textContent = "Actualizar tarea";
+      cancelBtn.style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.eliminarTarea = async function(id) {
+      try {
+        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) {
+          setFeedback(data.error || "No se pudo eliminar la tarea", true);
+          return;
+        }
+        setFeedback(data.mensaje || "Tarea eliminada");
+        cargarTareas();
+      } catch {
+        setFeedback("Error de red al eliminar la tarea", true);
+      }
+    };
+
+    cancelBtn.addEventListener("click", resetForm);
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = taskIdInput.value;
+      const payload = {
+        nombre: nombreInput.value.trim(),
+        descripcion: descripcionInput.value.trim(),
+        estado: estadoInput.value,
+        prioridad: prioridadInput.value
+      };
+
+      const url = id ? `${API_URL}/${id}` : API_URL;
+      const method = id ? "PUT" : "POST";
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setFeedback(data.error || "Error al guardar la tarea", true);
+          return;
+        }
+
+        setFeedback(data.mensaje || "Operación exitosa");
+        resetForm();
+        cargarTareas();
+      } catch {
+        setFeedback("Error de red al comunicarse con el servidor", true);
+      }
+    });
+
+    cargarTareas();
+  </script>
+</body>
+</html>
